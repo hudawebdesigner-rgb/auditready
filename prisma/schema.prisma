@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Category {
+  FOOD
+  TRANSPORT
+  HOUSING
+  UTILITIES
+  ENTERTAINMENT
+  HEALTH
+  OTHER
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amountCents Int
+  category    Category @default(OTHER)
+  occurredOn  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([occurredOn])
+  @@index([category])
+}

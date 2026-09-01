@@ -1,0 +1,502 @@
+{%- comment -%}
+  CR8 3D Hero + Landing section.
+  Renders a WebGL hero (Three.js, lazy-loaded) with a CSS-parallax / static
+  fallback, plus the full landing page below it. All copy, colors and the
+  product come from the schema below — nothing here is hard-coded.
+{%- endcomment -%}
+
+{%- liquid
+  assign product = section.settings.product
+  assign fallback_image_url = 'https://cdn.shopify.com/s/files/1/0670/5925/3460/files/cr8-pouch-transparent.png'
+  if section.settings.hero_image
+    assign hero_image_url = section.settings.hero_image | image_url: width: 1200
+  elsif product and product.featured_image
+    assign hero_image_url = product.featured_image | image_url: width: 1200
+  else
+    assign hero_image_url = fallback_image_url
+  endif
+
+  assign trust_items = section.blocks | where: 'type', 'trust_item'
+  assign benefits = section.blocks | where: 'type', 'benefit'
+  assign comparison_rows = section.blocks | where: 'type', 'comparison_row'
+  assign reviews = section.blocks | where: 'type', 'review'
+  assign faqs = section.blocks | where: 'type', 'faq'
+  assign footer_links = section.blocks | where: 'type', 'footer_link'
+-%}
+
+{{ 'cr8-hero-3d.css' | asset_url | stylesheet_tag }}
+
+{%- style -%}
+  #shopify-section-{{ section.id }} {
+    --cr8-bg: {{ section.settings.bg_color }};
+    --cr8-accent: {{ section.settings.accent_color }};
+    --cr8-text: {{ section.settings.text_color }};
+  }
+{%- endstyle -%}
+
+<div
+  class="cr8-hero-3d"
+  id="cr8-hero-3d-{{ section.id }}"
+  data-cr8-root
+  data-section-id="{{ section.id }}"
+  data-hero-image="{{ hero_image_url }}"
+  data-guarantee-days="{{ section.settings.guarantee_days | default: 30 }}"
+>
+
+  {%- comment -%} ---------- 3D / parallax hero ---------- {%- endcomment -%}
+  <section class="cr8-hero" data-cr8-hero aria-label="{{ section.settings.headline | escape }}">
+    <div class="cr8-hero__bg-layer" data-cr8-parallax="0.15" aria-hidden="true"></div>
+
+    <div class="cr8-hero__canvas-wrap" data-cr8-canvas-wrap aria-hidden="true">
+      <canvas class="cr8-hero__canvas" data-cr8-canvas></canvas>
+      <img
+        class="cr8-hero__fallback-image"
+        data-cr8-fallback-image
+        data-cr8-parallax="0.3"
+        src="{{ hero_image_url }}"
+        loading="eager"
+        fetchpriority="high"
+        width="900"
+        height="900"
+        alt=""
+      >
+    </div>
+
+    <div class="cr8-hero__content" data-cr8-parallax="0.05">
+      {%- if section.settings.eyebrow != blank -%}
+        <p class="cr8-hero__eyebrow" data-cr8-reveal>{{ section.settings.eyebrow }}</p>
+      {%- endif -%}
+      <h1 class="cr8-hero__headline" data-cr8-reveal>{{ section.settings.headline }}</h1>
+      {%- if section.settings.subtext != blank -%}
+        <p class="cr8-hero__subtext" data-cr8-reveal>{{ section.settings.subtext }}</p>
+      {%- endif -%}
+      <div class="cr8-hero__cta" data-cr8-reveal>
+        <a href="#cr8-buy-{{ section.id }}" class="cr8-btn cr8-btn--primary" data-cr8-scroll-to="#cr8-buy-{{ section.id }}">
+          Shop CR8 Creatine
+        </a>
+        <a href="#cr8-trust-{{ section.id }}" class="cr8-hero__scroll-hint" data-cr8-scroll-to="#cr8-trust-{{ section.id }}">
+          <span>Scroll</span>
+          <svg width="14" height="20" viewBox="0 0 14 20" fill="none" aria-hidden="true"><path d="M1 1L7 7L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 12L7 18L13 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="cr8-visually-hidden">Enable JavaScript for the interactive 3D product view. A static product image is shown above.</p>
+    </noscript>
+  </section>
+
+  {%- comment -%} ---------- Trust strip ---------- {%- endcomment -%}
+  {%- if trust_items.size > 0 -%}
+    <section class="cr8-trust" id="cr8-trust-{{ section.id }}" aria-label="Product facts">
+      <ul class="cr8-trust__list">
+        {%- for block in trust_items -%}
+          <li class="cr8-trust__item" data-cr8-reveal {{ block.shopify_attributes }}>
+            {%- if block.settings.icon != blank -%}
+              <span class="cr8-trust__icon" aria-hidden="true">{{ block.settings.icon }}</span>
+            {%- endif -%}
+            <span class="cr8-trust__value">{{ block.settings.value }}</span>
+            <span class="cr8-trust__label">{{ block.settings.label }}</span>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ---------- Benefits ---------- {%- endcomment -%}
+  {%- if benefits.size > 0 -%}
+    <section class="cr8-benefits" aria-label="Benefits">
+      <div class="cr8-section-inner">
+        <div class="cr8-benefits__grid">
+          {%- for block in benefits -%}
+            <article class="cr8-benefit-card" data-cr8-reveal {{ block.shopify_attributes }}>
+              {%- if block.settings.icon != blank -%}
+                <span class="cr8-benefit-card__icon" aria-hidden="true">{{ block.settings.icon }}</span>
+              {%- endif -%}
+              <h3 class="cr8-benefit-card__title">{{ block.settings.title }}</h3>
+              <div class="cr8-benefit-card__text">{{ block.settings.text }}</div>
+            </article>
+          {%- endfor -%}
+        </div>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ---------- Comparison ---------- {%- endcomment -%}
+  {%- if comparison_rows.size > 0 -%}
+    <section class="cr8-compare" aria-labelledby="cr8-compare-heading-{{ section.id }}">
+      <div class="cr8-section-inner">
+        <h2 class="cr8-section-heading" id="cr8-compare-heading-{{ section.id }}" data-cr8-reveal>Powder vs. Gummies</h2>
+        <div class="cr8-compare__table-wrap" data-cr8-reveal>
+          <table class="cr8-compare__table">
+            <thead>
+              <tr>
+                <th scope="col"><span class="cr8-visually-hidden">Feature</span></th>
+                <th scope="col" class="cr8-compare__col--cr8">CR8 Powder</th>
+                <th scope="col">Gummies</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%- for block in comparison_rows -%}
+                <tr {{ block.shopify_attributes }}>
+                  <th scope="row">{{ block.settings.feature }}</th>
+                  <td class="cr8-compare__col--cr8">{{ block.settings.powder_value }}</td>
+                  <td>{{ block.settings.gummies_value }}</td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ---------- Reviews ---------- {%- endcomment -%}
+  {%- if reviews.size > 0 -%}
+    <section class="cr8-reviews" aria-labelledby="cr8-reviews-heading-{{ section.id }}">
+      <div class="cr8-section-inner">
+        <h2 class="cr8-section-heading" id="cr8-reviews-heading-{{ section.id }}" data-cr8-reveal>What people are saying</h2>
+        <p class="cr8-reviews__placeholder-badge" data-cr8-reveal>Placeholder reviews — replace with real customer reviews before launch</p>
+        <div class="cr8-reviews__grid">
+          {%- for block in reviews -%}
+            <figure class="cr8-review-card" data-cr8-reveal {{ block.shopify_attributes }}>
+              <div class="cr8-review-card__stars" aria-hidden="true">
+                {%- assign rating = block.settings.rating | default: 5 -%}
+                {%- for i in (1..5) -%}
+                  {%- if i <= rating -%}★{%- else -%}☆{%- endif -%}
+                {%- endfor -%}
+              </div>
+              <span class="cr8-visually-hidden">Rated {{ rating }} out of 5</span>
+              <blockquote class="cr8-review-card__quote">{{ block.settings.quote }}</blockquote>
+              <figcaption class="cr8-review-card__author">{{ block.settings.author }}</figcaption>
+            </figure>
+          {%- endfor -%}
+        </div>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ---------- Buy block ---------- {%- endcomment -%}
+  <section class="cr8-buy" id="cr8-buy-{{ section.id }}" aria-labelledby="cr8-buy-heading-{{ section.id }}">
+    <div class="cr8-section-inner cr8-buy__inner">
+      {%- if product and product != empty -%}
+        {%- liquid
+          assign selected_variant = product.selected_or_first_available_variant
+          assign has_selling_plans = false
+          if product.selling_plan_groups.size > 0
+            assign has_selling_plans = true
+            assign selling_plan_group = product.selling_plan_groups.first
+          endif
+        -%}
+        <div class="cr8-buy__media" data-cr8-reveal>
+          <img
+            src="{{ hero_image_url }}"
+            alt="{{ product.featured_image.alt | default: product.title | escape }}"
+            loading="lazy"
+            width="600"
+            height="600"
+          >
+        </div>
+        <div class="cr8-buy__details" data-cr8-reveal>
+          <h2 class="cr8-section-heading" id="cr8-buy-heading-{{ section.id }}">{{ product.title }}</h2>
+          <p class="cr8-buy__description">{{ product.description | strip_html | truncatewords: 40 }}</p>
+
+          <form
+            method="post"
+            action="{{ routes.cart_add_url }}"
+            enctype="multipart/form-data"
+            data-cr8-buy-form
+            novalidate
+          >
+            <input type="hidden" name="id" value="{{ selected_variant.id }}" data-cr8-variant-input>
+
+            {%- if has_selling_plans -%}
+              <div class="cr8-purchase-toggle" role="radiogroup" aria-label="Purchase option" data-cr8-purchase-toggle>
+                <button type="button" class="cr8-purchase-toggle__option is-active" data-cr8-purchase-option="onetime" role="radio" aria-checked="true">
+                  <span class="cr8-purchase-toggle__title">One-time</span>
+                  <span class="cr8-purchase-toggle__price" data-cr8-price-onetime>{{ selected_variant.price | money }}</span>
+                </button>
+                <button type="button" class="cr8-purchase-toggle__option" data-cr8-purchase-option="subscribe" role="radio" aria-checked="false">
+                  <span class="cr8-purchase-toggle__title">Subscribe &amp; save</span>
+                  <span class="cr8-purchase-toggle__price" data-cr8-price-subscribe></span>
+                  <span class="cr8-purchase-toggle__badge" data-cr8-savings-badge></span>
+                </button>
+              </div>
+              <input type="hidden" name="selling_plan" value="" data-cr8-selling-plan-input>
+            {%- else -%}
+              <div class="cr8-buy__price" data-cr8-price-onetime>{{ selected_variant.price | money }}</div>
+            {%- endif -%}
+
+            <div class="cr8-buy__row">
+              <div class="cr8-qty-stepper" data-cr8-qty-stepper>
+                <button type="button" class="cr8-qty-stepper__btn" data-cr8-qty-decrease aria-label="Decrease quantity">−</button>
+                <input type="number" name="quantity" value="1" min="1" max="20" inputmode="numeric" data-cr8-qty-input aria-label="Quantity">
+                <button type="button" class="cr8-qty-stepper__btn" data-cr8-qty-increase aria-label="Increase quantity">+</button>
+              </div>
+              <button type="submit" class="cr8-btn cr8-btn--primary cr8-buy__submit" data-cr8-add-to-cart>
+                <span data-cr8-add-to-cart-label>Add to cart</span>
+              </button>
+            </div>
+            <p class="cr8-buy__status" role="status" aria-live="polite" data-cr8-cart-status></p>
+          </form>
+        </div>
+
+        {%- comment -%} Minimal product JSON for variant / selling-plan JS logic {%- endcomment -%}
+        <script type="application/json" data-cr8-product-json>
+          {
+            "id": {{ product.id | json }},
+            "variants": [
+              {%- for variant in product.variants -%}
+                {
+                  "id": {{ variant.id | json }},
+                  "available": {{ variant.available | json }},
+                  "price": {{ variant.price | json }},
+                  "sellingPlanAllocations": [
+                    {%- for allocation in variant.selling_plan_allocations -%}
+                      {
+                        "sellingPlanId": {{ allocation.selling_plan.id | json }},
+                        "sellingPlanGroupId": {{ allocation.selling_plan.group_id | json }},
+                        "price": {{ allocation.price | json }}
+                      }{% unless forloop.last %},{% endunless %}
+                    {%- endfor -%}
+                  ]
+                }{% unless forloop.last %},{% endunless %}
+              {%- endfor -%}
+            ],
+            "sellingPlanGroupId": {{ selling_plan_group.id | json }}
+          }
+        </script>
+      {%- else -%}
+        <div class="cr8-buy__empty" data-cr8-reveal>
+          <p>Select a product in the section settings to enable the buy block.</p>
+        </div>
+      {%- endif -%}
+    </div>
+  </section>
+
+  {%- comment -%} ---------- Guarantee ---------- {%- endcomment -%}
+  <section class="cr8-guarantee" aria-label="Guarantee">
+    <div class="cr8-section-inner cr8-guarantee__inner" data-cr8-reveal>
+      <span class="cr8-guarantee__icon" aria-hidden="true">🛡</span>
+      <p>
+        {{ section.settings.guarantee_days | default: 30 }}-day money-back guarantee.
+        {{ section.settings.guarantee_text }}
+      </p>
+    </div>
+  </section>
+
+  {%- comment -%} ---------- FAQ ---------- {%- endcomment -%}
+  {%- if faqs.size > 0 -%}
+    <section class="cr8-faq" aria-labelledby="cr8-faq-heading-{{ section.id }}">
+      <div class="cr8-section-inner">
+        <h2 class="cr8-section-heading" id="cr8-faq-heading-{{ section.id }}" data-cr8-reveal>Frequently asked questions</h2>
+        <div class="cr8-faq__list" data-cr8-reveal>
+          {%- for block in faqs -%}
+            <details class="cr8-faq__item" {{ block.shopify_attributes }}>
+              <summary class="cr8-faq__question">{{ block.settings.question }}</summary>
+              <div class="cr8-faq__answer">{{ block.settings.answer }}</div>
+            </details>
+          {%- endfor -%}
+        </div>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ---------- Footer ---------- {%- endcomment -%}
+  <footer class="cr8-footer">
+    <div class="cr8-section-inner cr8-footer__inner">
+      <span class="cr8-footer__brand">CR8</span>
+      {%- if footer_links.size > 0 -%}
+        <nav class="cr8-footer__links" aria-label="Footer">
+          {%- for block in footer_links -%}
+            <a href="{{ block.settings.url }}" {{ block.shopify_attributes }}>{{ block.settings.label }}</a>
+          {%- endfor -%}
+        </nav>
+      {%- endif -%}
+      <span class="cr8-footer__copyright">&copy; {{ 'now' | date: '%Y' }} CR8. All rights reserved.</span>
+    </div>
+  </footer>
+
+  {%- comment -%} ---------- Sticky add-to-cart bar ---------- {%- endcomment -%}
+  {%- if section.settings.show_sticky_bar and product and product != empty -%}
+    <div class="cr8-sticky-bar" data-cr8-sticky-bar hidden>
+      <div class="cr8-sticky-bar__inner">
+        <img src="{{ hero_image_url }}" alt="" width="48" height="48" loading="lazy">
+        <div class="cr8-sticky-bar__info">
+          <span class="cr8-sticky-bar__title">{{ product.title }}</span>
+          <span class="cr8-sticky-bar__price" data-cr8-sticky-price>{{ product.selected_or_first_available_variant.price | money }}</span>
+        </div>
+        <button type="button" class="cr8-btn cr8-btn--primary" data-cr8-sticky-add-to-cart>Add to cart</button>
+      </div>
+    </div>
+  {%- endif -%}
+
+  <div class="cr8-toast" data-cr8-toast role="status" aria-live="polite" hidden></div>
+</div>
+
+<script src="{{ 'cr8-hero-3d.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "CR8 3D Hero & Landing",
+  "tag": "section",
+  "class": "cr8-hero-3d-section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Product"
+    },
+    {
+      "type": "header",
+      "content": "Hero copy"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow text",
+      "default": "CR8 // CREATINE MONOHYDRATE"
+    },
+    {
+      "type": "text",
+      "id": "headline",
+      "label": "Headline",
+      "default": "Fuel Your Formation."
+    },
+    {
+      "type": "textarea",
+      "id": "subtext",
+      "label": "Subtext",
+      "default": "Single-ingredient creatine monohydrate. Eurofins-tested at 99.4% assay. No fillers, no fluff — just results."
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image",
+      "label": "Hero product image (optional)",
+      "info": "Defaults to the selected product's featured image."
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background",
+      "default": "#0A0A0A"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent",
+      "default": "#FFE600"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#F5F5F0"
+    },
+    {
+      "type": "header",
+      "content": "Guarantee"
+    },
+    {
+      "type": "number",
+      "id": "guarantee_days",
+      "label": "Guarantee length (days)",
+      "default": 30
+    },
+    {
+      "type": "textarea",
+      "id": "guarantee_text",
+      "label": "Guarantee text",
+      "default": "Not happy with your results? Full refund, no questions asked."
+    },
+    {
+      "type": "header",
+      "content": "Sticky bar"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sticky_bar",
+      "label": "Show sticky add-to-cart bar on scroll",
+      "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "trust_item",
+      "name": "Trust stat",
+      "settings": [
+        { "type": "text", "id": "icon", "label": "Icon (emoji or short symbol)" },
+        { "type": "text", "id": "value", "label": "Value", "default": "5g" },
+        { "type": "text", "id": "label", "label": "Label", "default": "Daily dose" }
+      ]
+    },
+    {
+      "type": "benefit",
+      "name": "Benefit card",
+      "settings": [
+        { "type": "text", "id": "icon", "label": "Icon (emoji or short symbol)" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Pure & simple" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>One ingredient. No fillers, sugars or artificial flavoring.</p>" }
+      ]
+    },
+    {
+      "type": "comparison_row",
+      "name": "Comparison row",
+      "settings": [
+        { "type": "text", "id": "feature", "label": "Feature", "default": "Creatine per serving" },
+        { "type": "text", "id": "powder_value", "label": "CR8 powder value", "default": "5g" },
+        { "type": "text", "id": "gummies_value", "label": "Gummies value", "default": "1-2g" }
+      ]
+    },
+    {
+      "type": "review",
+      "name": "Review (placeholder)",
+      "settings": [
+        { "type": "paragraph", "content": "Mark clearly as placeholder until real reviews are collected." },
+        { "type": "text", "id": "author", "label": "Author", "default": "Placeholder reviewer" },
+        { "type": "range", "id": "rating", "label": "Rating", "min": 1, "max": 5, "step": 1, "default": 5 },
+        { "type": "textarea", "id": "quote", "label": "Quote", "default": "Placeholder review text." }
+      ]
+    },
+    {
+      "type": "faq",
+      "name": "FAQ item",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question", "default": "When should I take CR8?" },
+        { "type": "richtext", "id": "answer", "label": "Answer", "default": "<p>Any time of day. Consistency matters more than timing.</p>" }
+      ]
+    },
+    {
+      "type": "footer_link",
+      "name": "Footer link",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Label", "default": "Contact" },
+        { "type": "url", "id": "url", "label": "URL" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "CR8 3D Hero & Landing",
+      "blocks": [
+        { "type": "trust_item", "settings": { "icon": "⚡", "value": "5g", "label": "Daily dose" } },
+        { "type": "trust_item", "settings": { "icon": "🎯", "value": "1", "label": "Ingredient" } },
+        { "type": "trust_item", "settings": { "icon": "📦", "value": "30", "label": "Servings" } },
+        { "type": "trust_item", "settings": { "icon": "🔬", "value": "99.4%", "label": "Eurofins tested" } },
+        { "type": "benefit", "settings": { "icon": "🧪", "title": "Lab-verified purity", "text": "<p>Eurofins-tested at 99.4% assay, batch CM2025041501.</p>" } },
+        { "type": "benefit", "settings": { "icon": "🥄", "title": "One clean ingredient", "text": "<p>100% creatine monohydrate. No fillers, no fluff.</p>" } },
+        { "type": "benefit", "settings": { "icon": "💪", "title": "Built for output", "text": "<p>5g daily dose backed by decades of research.</p>" } },
+        { "type": "comparison_row", "settings": { "feature": "Creatine per serving", "powder_value": "5g", "gummies_value": "1-2g" } },
+        { "type": "comparison_row", "settings": { "feature": "Added sugar", "powder_value": "0g", "gummies_value": "3-5g" } },
+        { "type": "comparison_row", "settings": { "feature": "Cost per serving", "powder_value": "£0.33", "gummies_value": "£0.90+" } },
+        { "type": "faq", "settings": { "question": "When should I take CR8?", "answer": "<p>Any time of day. Consistency matters more than timing.</p>" } },
+        { "type": "faq", "settings": { "question": "Does it need to be cycled?", "answer": "<p>No. Daily, continuous use is standard and well-studied.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
